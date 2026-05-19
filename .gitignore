@@ -1,5 +1,5 @@
-# /target/
-# /.vscode/
-# /storage/
-# *.jar
-# *.parquet
+/target/
+/.vscode/
+/storage/
+*.jar
+*.parquet
