@@ -20,9 +20,9 @@ import java.time.Duration;
 import java.util.*;
 
 public class WeatherParquetConsumer {
-    private static final String TOPIC = "weather-stations";
+    private static final String TOPIC = "weather-readings";
     private static final String BOOTSTRAP_SERVERS = "localhost:9092";
-    private static final int BUFFER_SIZE = 5; 
+    private static final int BUFFER_SIZE = 10000; 
     private static final List<WeatherMessage> buffer = new ArrayList<>();
     private static final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -50,8 +50,8 @@ public class WeatherParquetConsumer {
     private static final Schema AVRO_SCHEMA = new Schema.Parser().parse(SCHEMA_JSON);
 
     public static void main(String[] args) {
-        System.setProperty("hadoop.home.dir", new File(".").getAbsolutePath());
-
+        Configuration.addDefaultResource("hdfs-default.xml");
+        System.setProperty("hadoop.home.dir", "C:\\Users\\USER\\OneDrive\\Documents\\Uni\\term 8\\Data intensive\\labs\\Final_Project\\weather-monitoring");
         Properties props = new Properties();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, BOOTSTRAP_SERVERS);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, "weather-parquet-consumer-group");
@@ -99,21 +99,27 @@ public class WeatherParquetConsumer {
             long stationId = entry.getKey();
             List<WeatherMessage> stationRecords = entry.getValue();
 
-            String folderPath = String.format("storage/year=2026/month=05/day=22/station_id=%d", stationId);
-            File storageDir = new File(folderPath);
+            java.time.LocalDate date = java.time.Instant.ofEpochSecond(stationRecords.get(0).statusTimestamp)
+             .atZone(java.time.ZoneOffset.UTC).toLocalDate();
+            String folderPath = String.format("storage/year=%d/month=%02d/day=%02d/station_id=%d",
+                date.getYear(), date.getMonthValue(), date.getDayOfMonth(), stationId);            File storageDir = new File(folderPath);
             if (!storageDir.exists()) {
                 storageDir.mkdirs();
             }
 
             String filePath = storageDir.getAbsolutePath() + "/data_" + System.currentTimeMillis() + ".parquet";
-            Path path = new Path(filePath);
+            Configuration conf = new Configuration();
+conf.set("fs.defaultFS", "file:///");
+conf.set("fs.file.impl", "org.apache.hadoop.fs.LocalFileSystem");
 
-            try (ParquetWriter<WeatherMessage> writer = AvroParquetWriter.<WeatherMessage>builder(path)
-                    .withSchema(AVRO_SCHEMA)
-                    .withDataModel(ReflectData.get())
-                    .withConf(new Configuration())
-                    .withCompressionCodec(CompressionCodecName.SNAPPY)
-                    .build()) {
+Path path = new Path("file:///" + filePath.replace("\\", "/"));
+
+try (ParquetWriter<WeatherMessage> writer = AvroParquetWriter.<WeatherMessage>builder(path)
+        .withSchema(AVRO_SCHEMA)
+        .withDataModel(ReflectData.get())
+        .withConf(conf)
+        .withCompressionCodec(CompressionCodecName.SNAPPY)
+        .build()) {
 
                 for (WeatherMessage msg : stationRecords) {
                     writer.write(msg);

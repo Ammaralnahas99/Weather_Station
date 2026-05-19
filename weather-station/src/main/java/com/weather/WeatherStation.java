@@ -55,7 +55,7 @@ public class WeatherStation {
 
             // Send to Kafka topic "weather-stations"
             ProducerRecord<String, String> record =
-                new ProducerRecord<>("weather-stations",
+                new ProducerRecord<>("weather-readings",
                     String.valueOf(stationId), json);
 
             producer.send(record, (metadata, exception) -> {
