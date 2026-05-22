@@ -1,6 +1,6 @@
 package com.weather;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonProperty;  //change java object to json
 
 public class WeatherMessage {
 

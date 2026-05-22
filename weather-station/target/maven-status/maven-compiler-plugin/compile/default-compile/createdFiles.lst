@@ -1,3 +1,4 @@
 com\weather\WeatherMessage$Weather.class
 com\weather\WeatherMessage.class
+com\weather\RainDetector.class
 com\weather\WeatherStation.class
